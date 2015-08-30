@@ -17,16 +17,45 @@ namespace Jira_User_add.Controllers
 {
     public class HomeController : Controller
     {
+        private string jiraUrl = "http://localhost:8080/rest/api/2";
 
-        public JsonResult ThrowJsonError(Exception e) { 
-            Response.StatusCode = (int)System.Net.HttpStatusCode.BadRequest; Response.StatusDescription = e.Message; 
-            return Json(new { Message = e.Message }, JsonRequestBehavior.AllowGet); 
+        //var request = new RestRequest("/user", Method.GET);
+        //request.AddParameter("username", "Pete Conlan");
+        //newdeveloper = new JiraDeveloper() { name = "Pete Conlan", password = "ttMLC4eg", emailAddress = "username@local", displayName = "pcon", notification = "yes" };
+        public string AnalyzeResponse(IRestResponse response)
+        {
+            Regex regex = new Regex(@".*errors.*");
+            Match match = regex.Match(response.Content);
+            string errors = string.Empty;
+            if (match.Success)
+            {
+                dynamic errorDetail = JObject.Parse(response.Content);
+                var jsonErrormessages = errorDetail.errorMessages;
+                var jsonErrors = errorDetail.errors;
+                var allJsonErrors = jsonErrormessages.ToString() + jsonErrors.ToString();
+                Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                errors = allJsonErrors;
+            }
+            return errors;
+        }
+
+        public string AddUserToJiraGroup(JiraDeveloper newdeveloper, string role, IRestClient client)
+        {
+            var requestBody = string.Format("group/user?groupname={0}", role);
+            var request = new RestRequest(requestBody, Method.POST);
+            request.RequestFormat = DataFormat.Json;
+            request.AddBody(new
+            {
+                name = newdeveloper.name
+            });
+            var resp = client.Execute(request);
+            return AnalyzeResponse(resp);
         }
 
         public ActionResult Index()
         {
 
-            var client = new RestClient("http://localhost:8080/rest/api/2")
+            var client = new RestClient(jiraUrl)
             {
                 Authenticator = new HttpBasicAuthenticator("Pavel_Pesetskiy@epam.com", "ttMLC4eg")
             };
@@ -52,16 +81,15 @@ namespace Jira_User_add.Controllers
             //    return ThrowJsonError(new Exception(error.ToString()));
             //}
 
-            Console.WriteLine("dd");
             return View();
 
         }
 
         [HttpPost]
-        public JsonResult Index(JiraDeveloper newdeveloper, string[] role)
+        public JsonResult Index(JiraDeveloper newdeveloper, string[] roles)
         {
-            //newdeveloper = new JiraDeveloper() { name = "Pete Conlan", password = "ttMLC4eg", emailAddress = "username@local", displayName = "pcon", notification = "yes" };
-            var client = new RestClient("http://localhost:8080/rest/api/2")
+            var errors = string.Empty;
+            var client = new RestClient(jiraUrl)
             {
                 Authenticator = new HttpBasicAuthenticator("Pavel_Pesetskiy@epam.com", "ttMLC4eg")
             };
@@ -69,31 +97,26 @@ namespace Jira_User_add.Controllers
             var request = new RestRequest("user", Method.POST);
             request.RequestFormat = DataFormat.Json;
             request.AddBody(newdeveloper);
-
-            //var request = new RestRequest("/user", Method.GET);
-            //request.AddParameter("username", "Pete Conlan");
-
-            IRestResponse resp = client.Execute(request);
-            Regex regex = new Regex(@".*errors.*");
-            Match match = regex.Match(resp.Content);
-            if (match.Success)
+            var resp = client.Execute(request);
+            errors += AnalyzeResponse(resp);
+            
+            //adding roles
+            if ((roles != null) && newdeveloper != null)
             {
-                dynamic errorDetail = JObject.Parse(resp.Content);
-                var errormessages = errorDetail.errorMessages;
-                var errors = errorDetail.errors;
-                var allerrors = errormessages.ToString() + errors.ToString();
-                //var response = ThrowJsonError(new Exception(allerrors));
-                Response.StatusCode = (int)HttpStatusCode.BadRequest;
-                List<string> errorsdd = new List<string>();
-                //..some processing
-                errorsdd.Add("Error 1");
-                //..some processing
-                errorsdd.Add("Error 2");
-                return Json(errors);
+                foreach (var role in roles)
+                {
+                    errors = AddUserToJiraGroup(newdeveloper, role, client);
+                }
             }
-            Console.WriteLine("dd");
-            return Json(new { Message = "bla" }, JsonRequestBehavior.AllowGet); 
 
+            if (errors == string.Empty)
+            {
+                return Json(new { Message = "User successfully added." }, JsonRequestBehavior.AllowGet);
+            }
+            else
+            {
+                return Json(new { Data = errors}, JsonRequestBehavior.AllowGet);
+            }
         }
 
         public ActionResult About()
