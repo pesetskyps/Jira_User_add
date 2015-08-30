@@ -20,7 +20,7 @@ $(document).ready(function() {
                     // could occur in many events and there might not be
                     // a JSON response from the server
                     var json = $.parseJSON(xhr.responseText);
-                    sweetAlert(json.Data);
+                    sweetAlert(json.Data.replace(/[\[\]\{\}]/gi, ""));
                 } catch (e) {
                     alert('User or group is not added');
                 }

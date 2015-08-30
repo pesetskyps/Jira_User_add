@@ -105,7 +105,7 @@ namespace Jira_User_add.Controllers
             {
                 foreach (var role in roles)
                 {
-                    errors = AddUserToJiraGroup(newdeveloper, role, client);
+                    errors += AddUserToJiraGroup(newdeveloper, role, client);
                 }
             }
 
