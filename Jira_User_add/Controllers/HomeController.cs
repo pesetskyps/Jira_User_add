@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -50,12 +51,14 @@ namespace Jira_User_add.Controllers
             });
             var resp = client.Execute(request);
             return AnalyzeResponse(resp);
+
         }
-        //dummy change 122
+        //dummy change 1222
 
         public ActionResult Index()
         {
 
+            var vv = Directory.GetDirectories(@"\\EVBYMINSD246C\Upload_Cache");
             var client = new RestClient(jiraUrl)
             {
                 Authenticator = new HttpBasicAuthenticator("Pavel_Pesetskiy@epam.com", "ttMLC4eg")
