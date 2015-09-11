@@ -12,6 +12,7 @@ using Jira_User_add.Models;
 
 namespace Jira_User_add.Controllers
 {
+    //test 1
     [Authorize]
     public class AccountController : Controller
     {
