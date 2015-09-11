@@ -64,7 +64,7 @@ namespace Jira_User_add.Controllers
             {
                 Authenticator = new HttpBasicAuthenticator("Pavel_Pesetskiy@epam.com", "ttMLC4eg")
             };
-
+            //too coool
             //var request = new RestRequest("group/user?groupname=jira-developers", Method.POST);
             //request.RequestFormat = DataFormat.Json;
             //request.AddBody(new
